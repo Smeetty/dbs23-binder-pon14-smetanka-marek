@@ -1,4 +1,4 @@
-# DBS Assignment Example in Python
+# DBS Assignment in Python
 
 This repository is a simple example of a Python HTTP application based on the [FastAPI](https://fastapi.tiangolo.com/)
 containerized in the Docker environment. You don't have to stick with the FastAPI for your assignments, this repository
