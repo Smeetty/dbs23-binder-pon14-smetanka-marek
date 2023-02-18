@@ -1,14 +1,13 @@
 from rest_framework import viewsets
-from .serializers import RecipeSerializer
-from .models import Recipe
+from .serializers import dbsSerializer
 from django.db import connection
 from django.db import connection, transaction
 from django.http import JsonResponse
 
-class recipe_view_set(viewsets.ModelViewSet):
-    # define queryset
-    queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+# class dbs_view_set(viewsets.ModelViewSet):
+#     # define queryset
+#     queryset = dbs.objects.all()
+#     serializer_class = dbsSerializer
 
 def status_view(request):
     cursor = connection.cursor()

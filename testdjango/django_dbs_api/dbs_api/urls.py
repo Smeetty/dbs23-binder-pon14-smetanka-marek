@@ -1,4 +1,4 @@
-"""recipe_api URL Configuration
+"""dbs_api URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.1/topics/http/urls/
@@ -15,14 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from recipe.views import recipe_view_set
-from recipe.views import status_view
+# from dbs.views import dbs_view_set
+from dbs.views import status_view
 
 from rest_framework import routers
 
 # define the router
 router = routers.DefaultRouter()
-router.register(r'recipe', recipe_view_set) #the route tha will be used to access your API on the browser
+# router.register(r'dbs', dbs_view_set) #the route tha will be used to access your API on the browser
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -1,5 +1,5 @@
 """
-ASGI config for recipe_api project.
+ASGI config for dbs_api project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'recipe_api.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dbs_api.settings')
 
 application = get_asgi_application()

@@ -4,10 +4,10 @@ FROM python:3.7-alpine
 # of your application (e.g., Django logs) in real-time.
 ENV PYTHONUNBUFFERED 1
 # Make a directory in your Docker image, which you can use to store your source code
-RUN mkdir /django_recipe_api
-# Set the /django_recipe_api directory as the working directory
-WORKDIR /django_recipe_api
-# Copies from your local machine's current directory to the django_recipe_api folder
+RUN mkdir /django_dbs_api
+# Set the /django_dbs_api directory as the working directory
+WORKDIR /django_dbs_api
+# Copies from your local machine's current directory to the django_dbs_api folder
 # in the Docker image
 COPY . .
 # Copy the requirements.txt file adjacent to the Dockerfile

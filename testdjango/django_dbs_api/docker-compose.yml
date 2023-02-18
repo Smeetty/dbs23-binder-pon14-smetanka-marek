@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  django_recipe_api:
+  django_dbs_api:
     build:
       context: . # Sets the directory for docker-compose to build.
 
@@ -11,13 +11,13 @@ services:
 
     volumes:
     # Copy changes made to the project to your image in real-time.
-      - .:/django_recipe_api
+      - .:/django_dbs_api
     # Handles the command used to run the project in the Docker container.
     command: sh -c "python manage.py runserver 0.0.0.0:8000"
 
     environment:
       - DB_HOST=db
-      - DB_NAME=recipe
+      - DB_NAME=dbs
       - DB_USER=postgres
       - DB_PASS=supersecretpassword
     depends_on:
@@ -26,7 +26,7 @@ services:
   db:
     image: postgres:10-alpine
     environment:
-      - POSTGRES_DB=recipe
+      - POSTGRES_DB=dbs
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=supersecretpassword
     ports:
