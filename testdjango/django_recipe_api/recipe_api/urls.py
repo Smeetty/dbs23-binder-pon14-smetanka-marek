@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from recipe.views import recipe_view_set
 from recipe.views import status_view
 
@@ -23,10 +23,10 @@ from rest_framework import routers
 # define the router
 router = routers.DefaultRouter()
 router.register(r'recipe', recipe_view_set) #the route tha will be used to access your API on the browser
-router.register(r'v1/status', status_view)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    re_path(r'v1/status', status_view, name='version'),
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')) # Adds 'Login' link in the top right of the page
 

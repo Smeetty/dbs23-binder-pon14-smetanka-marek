@@ -16,7 +16,7 @@ services:
     command: sh -c "python manage.py runserver 0.0.0.0:8000"
 
     environment:
-      - DB_HOST=0.0.0.0
+      - DB_HOST=db
       - DB_NAME=recipe
       - DB_USER=postgres
       - DB_PASS=supersecretpassword
@@ -29,3 +29,5 @@ services:
       - POSTGRES_DB=recipe
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=supersecretpassword
+    ports:
+      - "5432:5432"
