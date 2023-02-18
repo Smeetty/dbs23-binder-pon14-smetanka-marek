@@ -12,5 +12,5 @@ class recipe_view_set(viewsets.ModelViewSet):
 
 class status_view(viewsets.ModelViewSet):
     # define queryset
-    queryset = cursor.execute('SELECT version();')
+    queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer

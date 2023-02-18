@@ -17,7 +17,6 @@ services:
 
     environment:
       - DB_HOST=0.0.0.0
-      - DB_PORT=5432
       - DB_NAME=recipe
       - DB_USER=postgres
       - DB_PASS=supersecretpassword
