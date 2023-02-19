@@ -15,10 +15,9 @@ async def connect():
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
 
-    if conn:
-        curr = conn.cursor()
-        curr.execute("SELECT version();")
-        version = curr.fetchall()
-        return {
-            'version': version[0][0]
-        }
+    curr = conn.cursor()
+    curr.execute("SELECT version();")
+    version = curr.fetchall()
+    return {
+        'version': version[0][0]
+    }
