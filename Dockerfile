@@ -7,7 +7,7 @@ USER dbs
 
 WORKDIR /home/dbs
 
-COPY dbs23-binder-po14-smetanka-marek .
+COPY .. .
 RUN pip3 install -r requirements.txt --no-cache-dir
 
 EXPOSE 8000

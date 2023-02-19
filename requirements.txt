@@ -1,6 +1,7 @@
 uvicorn
 fastapi
 psycopg2-binary
+pydantic
 
 #for loading environment variables  #new
 python-dotenv
