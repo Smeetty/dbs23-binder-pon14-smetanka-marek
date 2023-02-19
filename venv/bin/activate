@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/home/marek/FIIT/FIIT-STU/dbs23-binder-pon14-smetanka-marek/venv"
+VIRTUAL_ENV="/home/marek/FIIT/FIIT-STU/dbs23-binder-po14-smetanka-marek/venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

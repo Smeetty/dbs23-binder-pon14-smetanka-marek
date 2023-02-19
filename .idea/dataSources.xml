@@ -5,7 +5,7 @@
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:\\wsl$\Ubuntu-20.04\home\marek\FIIT\FIIT-STU\dbs23-binder-pon14-smetanka-marek\testdjango\django_recipe_api\db.sqlite3</jdbc-url>
+      <jdbc-url>jdbc:sqlite:\\wsl$\Ubuntu-20.04\home\marek\FIIT\FIIT-STU\dbs23-binder-po14-smetanka-marek\testdjango\django_recipe_api\db.sqlite3</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

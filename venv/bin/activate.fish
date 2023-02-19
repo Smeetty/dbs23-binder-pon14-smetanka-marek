@@ -29,7 +29,7 @@ end
 # unset irrelevant variables
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/home/marek/FIIT/FIIT-STU/dbs23-binder-pon14-smetanka-marek/venv"
+set -gx VIRTUAL_ENV "/home/marek/FIIT/FIIT-STU/dbs23-binder-po14-smetanka-marek/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH
