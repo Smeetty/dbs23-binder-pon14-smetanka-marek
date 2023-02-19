@@ -1,0 +1,15 @@
+uvicorn
+fastapi
+psycopg2-binary
+
+#for template
+jinja2
+
+#for static files
+aiofiles
+
+#for database   #new
+sqlalchemy
+
+#for loading environment variables  #new
+python-dotenv
