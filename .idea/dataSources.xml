@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:sqlite:\\wsl$\Ubuntu-20.04\home\marek\FIIT\FIIT-STU\dbs23-binder-po14-smetanka-marek\testdjango\django_recipe_api\db.sqlite3</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="postgres@localhost" uuid="750426e3-8f66-4078-913c-63d0601aea46">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

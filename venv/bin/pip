@@ -1,4 +1,4 @@
-#!/home/marek/FIIT/FIIT-STU/dbs23-binder-po14-smetanka-marek/venv/bin/python3
+#!/Users/marek/FIIT-STU/DBS/venv/bin/python3.10
 # -*- coding: utf-8 -*-
 import re
 import sys

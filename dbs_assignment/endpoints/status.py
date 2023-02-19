@@ -7,16 +7,18 @@ router = APIRouter()
 
 
 @router.get("/v1/status")
-async def status():
-    connection = psycopg2.connect(
-        dbname=settings.DATABASE_NAME,
+async def connect():
+    conn = psycopg2.connect(
         user=settings.DATABASE_USER,
         password=settings.DATABASE_PASSWORD,
         host=settings.DATABASE_HOST,
         port=settings.DATABASE_PORT,
-    )
-    if connection:
-        cursor = connection.cursor()
+        database=settings.DATABASE_NAME)
+
+    if conn:
+        curr = conn.cursor()
+        curr.execute("SELECT version();")
+        version = curr.fetchall()
         return {
-            'version': cursor.execute("SELECT version();")
+            'version': version[0][0]
         }
