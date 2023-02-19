@@ -7,7 +7,7 @@ USER dbs
 
 WORKDIR /home/dbs
 
-COPY . .
+COPY dbs-python-smetanka-marek .
 RUN pip3 install -r requirements.txt --no-cache-dir
 
 EXPOSE 8000
