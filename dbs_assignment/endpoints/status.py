@@ -29,14 +29,14 @@ async def connect(id):
     curr.execute("\
         SELECT json_build_object('id', t2.passenger_id, 'name', t2.passenger_name,\
        'flights_count', COUNT(flights.flight_id), 'flights', json_agg(flights.flight_id))\
-        FROM flights\
-        JOIN ticket_flights t on flights.flight_id = t.flight_id\
-        JOIN tickets t2 on t.ticket_no = t2.ticket_no\
+        FROM bookings.flights\
+        JOIN bookings.ticket_flights t on flights.flight_id = t.flight_id\
+        JOIN bookings.tickets t2 on t.ticket_no = t2.ticket_no\
         WHERE\
         flights.flight_id IN\
-        (SELECT f.flight_id  FROM tickets\
-        LEFT JOIN ticket_flights tf on tickets.ticket_no = tf.ticket_no\
-        LEFT JOIN flights f on tf.flight_id = f.flight_id\
+        (SELECT f.flight_id  FROM bookings.tickets\
+        LEFT JOIN bookings.ticket_flights tf on tickets.ticket_no = tf.ticket_no\
+        LEFT JOIN bookings.flights f on tf.flight_id = f.flight_id\
         WHERE tickets.passenger_id = (%s))\
         GROUP BY t2.passenger_id, t2.passenger_name", (id,))
 
