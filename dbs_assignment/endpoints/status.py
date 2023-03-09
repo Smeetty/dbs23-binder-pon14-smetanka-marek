@@ -42,8 +42,8 @@ async def connect(id):
         FROM bookings.flights\
         JOIN bookings.ticket_flights t on flights.flight_id = t.flight_id\
         JOIN bookings.tickets t2 on t.ticket_no = t2.ticket_no\
-        WHERE\
-        flights.flight_id IN\
+        WHERE t2.passenger_id != %s\
+        WHERE flights.flight_id IN\
         (SELECT f.flight_id  FROM bookings.tickets\
         LEFT JOIN bookings.ticket_flights tf on tickets.ticket_no = tf.ticket_no\
         LEFT JOIN bookings.flights f on tf.flight_id = f.flight_id\
@@ -87,11 +87,11 @@ async def connect(id):
                 )\
             ))\
            )\
-    FROM bookings\
-            LEFT JOIN tickets t ON bookings.book_ref = t.book_ref\
-            LEFT JOIN ticket_flights tf ON t.ticket_no = tf.ticket_no\
-            LEFT JOIN boarding_passes bp ON tf.ticket_no = bp.ticket_no\
-            LEFT JOIN flights fl ON bp.flight_id = fl.flight_id\
+    FROM bookings.bookings\
+            LEFT JOIN bookings.tickets t ON bookings.book_ref = t.book_ref\
+            LEFT JOIN bookings.ticket_flights tf ON t.ticket_no = tf.ticket_no\
+            LEFT JOIN bookings.boarding_passes bp ON tf.ticket_no = bp.ticket_no\
+            LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
     WHERE bookings.book_ref = %s\
     GROUP BY bookings.book_ref", (id,))
 
@@ -120,7 +120,7 @@ async def connect(delay):
                 'flight_no', flight_no,\
                 'delay', EXTRACT(MINUTES FROM (actual_departure  - scheduled_departure))\
             )\
-            FROM flights\
+            FROM bookings.flights\
             WHERE EXTRACT(MINUTES FROM (actual_departure  - scheduled_departure)) >= %s\
             ORDER BY delay DESC", (delay,))
 
@@ -152,7 +152,7 @@ async def connect(airport, day):
                'flight_no', flight_no,\
                'scheduled_departure', scheduled_departure\
             )\
-            FROM flights\
+            FROM bookings.flights\
             WHERE departure_airport = %s\
             AND EXTRACT(week FROM scheduled_departure) = %s\
             GROUP BY flight_id\
@@ -179,8 +179,9 @@ async def connect(airport):
     curr.execute("\
           SELECT\
             airport_code\
-        FROM airports_data\
-        LEFT JOIN flights f on airports_data.airport_code = f.arrival_airport\
+        FROM bookings.airports_data\
+
+        LEFT JOIN bookings.flights f on airports_data.airport_code = f.arrival_airport\
         WHERE f.departure_airport = %s\
         GROUP BY airport_code\
         ORDER BY airport_code", (airport, ))
@@ -211,9 +212,9 @@ async def connect(flight_no):
                'load', COUNT(ticket_no),\
                'percentage', ROUND(100 - ((COUNT(seat_no)/100) - (COUNT(ticket_no)/100)) * 100, 1)\
             )\
-        FROM flights\
-        LEFT JOIN seats s ON flights.aircraft_code = s.aircraft_code\
-        LEFT JOIN ticket_flights tf ON flights.flight_id = tf.flight_id\
+        FROM bookings.flights\
+        LEFT JOIN bookings.seats s ON flights.aircraft_code = s.aircraft_code\
+        LEFT JOIN bookings.ticket_flights tf ON flights.flight_id = tf.flight_id\
         WHERE flights.flight_no = %s\
         GROUP BY flights.flight_id\
         ORDER BY flights.flight_id", (flight_no, ))
