@@ -177,10 +177,8 @@ async def connect(airport):
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
     curr.execute("\
-          SELECT\
-            airport_code\
+          SELECT airport_code\
         FROM bookings.airports_data\
-
         LEFT JOIN bookings.flights f on airports_data.airport_code = f.arrival_airport\
         WHERE f.departure_airport = %s\
         GROUP BY airport_code\
@@ -205,8 +203,7 @@ async def connect(flight_no):
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
     curr.execute("\
-          SELECT\
-            json_build_object(\
+          SELECT json_build_object(\
                'id', flights.flight_id,\
                'aircraft_capacity', COUNT(s.seat_no),\
                'load', COUNT(ticket_no),\
