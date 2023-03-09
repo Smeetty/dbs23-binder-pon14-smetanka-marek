@@ -43,13 +43,13 @@ async def connect(id):
         JOIN bookings.ticket_flights t on flights.flight_id = t.flight_id\
         JOIN bookings.tickets t2 on t.ticket_no = t2.ticket_no\
         WHERE t2.passenger_id != %s\
-        WHERE flights.flight_id IN\
+        AND flights.flight_id IN\
         (SELECT f.flight_id  FROM bookings.tickets\
         LEFT JOIN bookings.ticket_flights tf on tickets.ticket_no = tf.ticket_no\
         LEFT JOIN bookings.flights f on tf.flight_id = f.flight_id\
         WHERE tickets.passenger_id = (%s))\
         GROUP BY t2.passenger_id, t2.passenger_name\
-        ORDER BY day_count DESC, passanger_id", (id,))
+        ORDER BY day_count DESC, passanger_id", (id, id))
 
     data = curr.fetchall()
     result = []
@@ -203,7 +203,8 @@ async def connect(flight_no):
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
     curr.execute("\
-          SELECT json_build_object(\
+          SELECT\
+            json_build_object(\
                'id', flights.flight_id,\
                'aircraft_capacity', COUNT(s.seat_no),\
                'load', COUNT(ticket_no),\
