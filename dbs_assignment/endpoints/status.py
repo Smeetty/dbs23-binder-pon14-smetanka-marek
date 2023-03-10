@@ -202,25 +202,17 @@ async def connect(flight_no):
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
-    curr.execute("\
-          SELECT\
-            json_build_object(\
-               'id', flights.flight_id,\
-               'aircraft_capacity', COUNT(s.seat_no),\
-               'load', COUNT(ticket_no),\
-               'percentage', ROUND(100 - ((COUNT(seat_no)/100) - (COUNT(ticket_no)/100)) * 100, 1)\
-            )\
-        FROM bookings.flights\
-        LEFT JOIN bookings.seats s ON flights.aircraft_code = s.aircraft_code\
-        LEFT JOIN bookings.ticket_flights tf ON flights.flight_id = tf.flight_id\
-        WHERE flights.flight_no = %s\
-        GROUP BY flights.flight_id\
-        ORDER BY flights.flight_id", (flight_no, ))
+    curr.execute("SELECT \
+                 json_build_object( 'id' ,flights.flight_id, 'aircraft_capacity',\
+                 (SELECT COUNT(seats.seat_no) FROM seats WHERE aircraft_code = flights.aircraft_code ),\
+                 'load', COUNT(tf.ticket_no), 'percentage_load', ROUND((cast(COUNT(tf.ticket_no) as decimal) / cast(( SELECT COUNT(seats.seat_no) FROM seats WHERE aircraft_code = flights.aircraft_code ) as decimal) * 100), 2)) FROM bookings.flights\
+                 LEFT JOIN ticket_flights tf on flights.flight_id = tf.flight_id\
+                 WHERE flights.flight_no = %s GROUP BY flights.flight_id ORDER BY flights.flight_id", (flight_no, ))
 
     data = curr.fetchall()
     result = []
     for json in data:
-        result.append(json[0])
+        result.append(json)
 
     return {
         'results': result
