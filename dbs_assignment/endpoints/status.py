@@ -123,7 +123,7 @@ async def connect(delay):
             )\
             FROM bookings.flights\
             WHERE EXTRACT(EPOCH FROM actual_departure - scheduled_departure)/60 >= %s\
-            ORDER BY delay DESC", (delay,))
+            ORDER BY delay DESC, flight_id", (delay,))
 
     data = curr.fetchall()
     result = []
@@ -144,11 +144,12 @@ async def connect(limit):
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
     curr.execute("\
-         SELECT count(ticket_no) as count ,json_build_object(\
+         SELECT count(DISTINCT t.ticket_no) as count, json_build_object(\
     'flight_no', flights.flight_no,\
-    'count', count(ticket_no))\
-        FROM bookings.flights\
- RIGHT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
+    'count', count(t.ticket_no))\
+        FROM flights\
+ LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
+ LEFT JOIN bookings.tickets t on tf.ticket_no = t.ticket_no\
         GROUP BY flights.flight_no\
  ORDER BY count DESC, flight_no DESC LIMIT %s", (limit,))
 
