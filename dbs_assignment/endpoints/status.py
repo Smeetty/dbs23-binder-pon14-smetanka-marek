@@ -147,7 +147,7 @@ async def connect(limit):
          SELECT count(DISTINCT t.ticket_no) as count, json_build_object(\
     'flight_no', flights.flight_no,\
     'count', count(t.ticket_no))\
-        FROM flights\
+        FROM bookings.flights\
  LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
  LEFT JOIN bookings.tickets t on tf.ticket_no = t.ticket_no\
         GROUP BY flights.flight_no\
