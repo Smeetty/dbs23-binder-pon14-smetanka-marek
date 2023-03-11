@@ -70,39 +70,36 @@ async def connect(id):
 
     curr = conn.cursor()
     curr.execute("\
-           SELECT json_build_object(\
-               'id', bookings.book_ref,\
-               'book_date', book_date,\
-               'boarding_passes', (SELECT json_agg(json_build_object(\
-                'id', tf.ticket_no,\
-                'passenger_id', t.passenger_id,\
-                'passenger_name', t.passenger_name,\
-                'boarding_no',  bp.boarding_no,\
-                'flight_no', fl.flight_no,\
-                'seat', bp.seat_no,\
-                'aircraft_code',  fl.aircraft_code,\
-                'arrival_airport', fl.arrival_airport,\
-                'departure_airport', fl.departure_airport,\
-                'scheduled_arrival', fl.scheduled_arrival,\
-                'scheduled_departure', fl.scheduled_departure\
-                )\
-            ))\
+         SELECT bookings.book_ref as id,\
+       book_date         as book_date,\
+       json_build_object(\
+               'id', t.ticket_no,\
+               'passenger_id', t.passenger_id,\
+               'passenger_name', t.passenger_name,\
+               'boarding_no', bp.boarding_no,\
+               'flight_no', fl.flight_no,\
+               'seat', bp.seat_no,\
+               'aircraft_code', fl.aircraft_code,\
+               'arrival_airport', fl.arrival_airport,\
+               'departure_airport', fl.departure_airport,\
+               'scheduled_arrival', fl.scheduled_arrival,\
+               'scheduled_departure', fl.scheduled_departure\
            )\
-    FROM bookings.bookings\
-            LEFT JOIN bookings.tickets t ON bookings.book_ref = t.book_ref\
-            LEFT JOIN bookings.ticket_flights tf ON t.ticket_no = tf.ticket_no\
-            LEFT JOIN bookings.boarding_passes bp ON tf.ticket_no = bp.ticket_no\
-            LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
-    WHERE bookings.book_ref = %s\
-    GROUP BY bookings.book_ref, tf.flight_id, bp.boarding_no ORDER BY tf.flight_id, bp.boarding_no", (id, ))
+ FROM bookings.bookings\
+         LEFT JOIN bookings.tickets t ON bookings.book_ref = t.book_ref\
+         LEFT JOIN bookings.boarding_passes bp ON t.ticket_no = bp.ticket_no\
+         LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
+ WHERE bookings.book_ref = %s\
+ ORDER BY fl.flight_id, bp.boarding_no", (id, ))
 
     data = curr.fetchall()
-    result = []
+    result = {"id": data[0][0], "book_date": data[0][1], "boarding_passes": []}
+
     for json in data:
-        result.append(json[0])
+        result['boarding_passes'].append(json[2])
 
     return {
-        'result': result[0]
+        'result': result
     }
 
 @router.get("/v1/flights/late-departure/{delay}")
