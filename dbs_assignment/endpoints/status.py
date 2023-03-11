@@ -131,34 +131,6 @@ async def connect(delay):
         'results': result
     }
 
-@router.get("/v1/top-airlines")
-async def connect(limit):
-    conn = psycopg2.connect(
-        user=settings.DATABASE_USER,
-        password=settings.DATABASE_PASSWORD,
-        host=settings.DATABASE_HOST,
-        port=settings.DATABASE_PORT,
-        database=settings.DATABASE_NAME)
-    curr = conn.cursor()
-    curr.execute("\
-         SELECT count(DISTINCT t.ticket_no) as count, json_build_object(\
-    'flight_no', flights.flight_no,\
-    'count', count(t.ticket_no))\
-        FROM bookings.flights\
- LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
- LEFT JOIN bookings.tickets t on tf.ticket_no = t.ticket_no\
-        GROUP BY flights.flight_no\
- ORDER BY count DESC, flight_no DESC LIMIT %s", (limit,))
-
-    data = curr.fetchall()
-    result = []
-    for json in data:
-        result.append(json[1])
-
-    return {
-        'results': result
-    }
-
 @router.get("/v1/departures")
 async def connect(airport, day):
     conn = psycopg2.connect(
