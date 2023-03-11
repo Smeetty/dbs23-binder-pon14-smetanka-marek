@@ -94,7 +94,7 @@ async def connect(id):
             LEFT JOIN bookings.boarding_passes bp ON tf.ticket_no = bp.ticket_no\
             LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
     WHERE bookings.book_ref = %s\
-    GROUP BY tf.flight_id, bp.boarding_no ORDER BY tf.flight_id, bp.boarding_no", (id, ))
+    GROUP BY bookings.book_ref, tf.flight_id, bp.boarding_no ORDER BY tf.flight_id, bp.boarding_no", (id, ))
 
     data = curr.fetchall()
     result = []
@@ -147,8 +147,8 @@ async def connect(limit):
          SELECT count(ticket_no) as count ,json_build_object(\
     'flight_no', flights.flight_no,\
     'count', count(ticket_no))\
-        FROM flights\
- RIGHT JOIN ticket_flights tf on flights.flight_id = tf.flight_id\
+        FROM bookings.flights\
+ RIGHT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
         GROUP BY flights.flight_no\
  ORDER BY count DESC, flight_no DESC LIMIT %s", (limit,))
 
