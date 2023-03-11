@@ -67,15 +67,15 @@ async def connect(id):
         host=settings.DATABASE_HOST,
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
-    curr = conn.cursor()
+    curr = conn.cursor
     curr.execute("\
            SELECT json_build_object(\
                'id', bookings.book_ref,\
                'book_date', book_date,\
                'boarding_passes', (SELECT json_agg(json_build_object(\
-                'id', t.passenger_id,\
-                'passenger_id', t.passenger_name,\
-                'passenger_name', fl.flight_no,\
+                'id', t.flight_id,\
+                'passenger_id', t.passenger_id,\
+                'passenger_name', fl.passenger_name,\
                 'boarding_no',  bp.boarding_no,\
                 'flight_no', fl.flight_no,\
                 'seat', bp.seat_no,\
@@ -93,7 +93,7 @@ async def connect(id):
             LEFT JOIN bookings.boarding_passes bp ON tf.ticket_no = bp.ticket_no\
             LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
     WHERE bookings.book_ref = %s\
-    GROUP BY bookings.book_ref", (id,))
+    GROUP BY bookings.book_ref ORDER BY t.flight_id, bp.boarding_no", (id,))
 
     data = curr.fetchall()
     result = []
@@ -101,7 +101,7 @@ async def connect(id):
         result.append(json[0])
 
     return {
-        'results': result
+        'result': result[0]
     }
 
 @router.get("/v1/flights/late-departure/{delay}")
@@ -136,6 +136,7 @@ async def connect(delay):
 @router.get("/v1/top-airlines")
 async def connect(limit):
    return limit
+
 @router.get("/v1/departures")
 async def connect(airport, day):
     conn = psycopg2.connect(
