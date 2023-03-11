@@ -67,15 +67,16 @@ async def connect(id):
         host=settings.DATABASE_HOST,
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
-    curr = conn.cursor
+
+    curr = conn.cursor()
     curr.execute("\
            SELECT json_build_object(\
                'id', bookings.book_ref,\
                'book_date', book_date,\
                'boarding_passes', (SELECT json_agg(json_build_object(\
-                'id', t.flight_id,\
+                'id', tf.flight_id,\
                 'passenger_id', t.passenger_id,\
-                'passenger_name', fl.passenger_name,\
+                'passenger_name', t.passenger_name,\
                 'boarding_no',  bp.boarding_no,\
                 'flight_no', fl.flight_no,\
                 'seat', bp.seat_no,\
@@ -93,7 +94,7 @@ async def connect(id):
             LEFT JOIN bookings.boarding_passes bp ON tf.ticket_no = bp.ticket_no\
             LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
     WHERE bookings.book_ref = %s\
-    GROUP BY bookings.book_ref ORDER BY t.flight_id, bp.boarding_no", (id,))
+    GROUP BY bookings.book_ref, tf.flight_id, bp.boarding_no ORDER BY tf.flight_id, bp.boarding_no", (id, ))
 
     data = curr.fetchall()
     result = []
@@ -168,7 +169,7 @@ async def connect(airport, day):
         'results': result
     }
 
-@router.get("/v1/airports/{airport}/destination")
+@router.get("/v1/airports/{airport}/destinations")
 async def connect(airport):
     conn = psycopg2.connect(
         user=settings.DATABASE_USER,
@@ -206,7 +207,7 @@ async def connect(flight_no):
     curr.execute("SELECT \
                  json_build_object( 'id' ,flights.flight_id, 'aircraft_capacity',\
                  (SELECT COUNT(seats.seat_no) FROM seats WHERE aircraft_code = flights.aircraft_code ),\
-                 'load', COUNT(tf.ticket_no), 'percentage_load', ROUND((cast(COUNT(tf.ticket_no) as decimal) / cast(( SELECT COUNT(seats.seat_no) FROM seats WHERE aircraft_code = flights.aircraft_code ) as decimal) * 100), 2)) FROM bookings.flights\
+                 'load', COUNT(tf.ticket_no), 'percentage_load', ROUND((cast(COUNT(tf.ticket_no) as decimal) / cast(( SELECT COUNT(seats.seat_no) bookings.FROM seats WHERE aircraft_code = flights.aircraft_code ) as decimal) * 100), 2)) FROM bookings.flights\
                  LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
                  WHERE flights.flight_no = %s GROUP BY flights.flight_id ORDER BY flights.flight_id", (flight_no, ))
 
@@ -238,7 +239,7 @@ async def connect(flight_no):
                          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 1 GROUP BY flights.aircraft_code)\
                          / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
          FROM bookings.flights\
-         LEFT JOIN seats s on flights.aircraft_code = s.aircraft_code\
+         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 1 GROUP BY flights.aircraft_code)\
         ,\
         'tuesday', (SELECT\
@@ -248,7 +249,7 @@ async def connect(flight_no):
                          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 2 GROUP BY flights.aircraft_code)\
                          / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
          FROM bookings.flights\
-         LEFT JOIN seats s on flights.aircraft_code = s.aircraft_code\
+         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 2 GROUP BY flights.aircraft_code)\
         ,\
         'wendesday', (SELECT\
@@ -258,7 +259,7 @@ async def connect(flight_no):
                          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 3 GROUP BY flights.aircraft_code)\
                          / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
          FROM bookings.flights\
-         LEFT JOIN seats s on flights.aircraft_code = s.aircraft_code\
+         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 3 GROUP BY flights.aircraft_code)\
         ,\
         'thursday', (SELECT\
@@ -268,7 +269,7 @@ async def connect(flight_no):
                          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 4 GROUP BY flights.aircraft_code)\
                          / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
          FROM bookings.flights\
-         LEFT JOIN seats s on flights.aircraft_code = s.aircraft_code\
+         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 4 GROUP BY flights.aircraft_code)\
         ,\
         'friday', (SELECT\
@@ -278,7 +279,7 @@ async def connect(flight_no):
                          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 5 GROUP BY flights.aircraft_code)\
                          / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
          FROM bookings.flights\
-         LEFT JOIN seats s on flights.aircraft_code = s.aircraft_code\
+         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 5 GROUP BY flights.aircraft_code)\
         ,\
         'saturday', (SELECT\
@@ -288,7 +289,7 @@ async def connect(flight_no):
                          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 6 GROUP BY flights.aircraft_code)\
                          / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
          FROM bookings.flights\
-         LEFT JOIN seats s on flights.aircraft_code = s.aircraft_code\
+         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 6 GROUP BY flights.aircraft_code)\
         ,\
         'sunday', (SELECT\
@@ -298,7 +299,7 @@ async def connect(flight_no):
                          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 7 GROUP BY flights.aircraft_code)\
                          / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
          FROM bookings.flights\
-         LEFT JOIN seats s on flights.aircraft_code = s.aircraft_code\
+         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
          WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 7 GROUP BY flights.aircraft_code)\
 ) FROM bookings.flights\
  WHERE flights.flight_no = (%s) GROUP BY flight_no", (flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, ))
