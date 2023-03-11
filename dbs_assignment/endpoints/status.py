@@ -90,7 +90,7 @@ async def connect(id):
          LEFT JOIN bookings.boarding_passes bp ON t.ticket_no = bp.ticket_no\
          LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
  WHERE bookings.book_ref = %s\
- ORDER BY fl.flight_id, bp.boarding_no", (id, ))
+ ORDER BY t.ticket_no, bp.boarding_no", (id, ))
 
     data = curr.fetchall()
     result = {"id": data[0][0], "book_date": data[0][1], "boarding_passes": []}
