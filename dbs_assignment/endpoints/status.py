@@ -74,7 +74,7 @@ async def connect(id):
                'id', bookings.book_ref,\
                'book_date', book_date,\
                'boarding_passes', (SELECT json_agg(json_build_object(\
-                'id', tf.flight_id,\
+                'id', tf.ticket_no,\
                 'passenger_id', t.passenger_id,\
                 'passenger_name', t.passenger_name,\
                 'boarding_no',  bp.boarding_no,\
@@ -94,7 +94,7 @@ async def connect(id):
             LEFT JOIN bookings.boarding_passes bp ON tf.ticket_no = bp.ticket_no\
             LEFT JOIN bookings.flights fl ON bp.flight_id = fl.flight_id\
     WHERE bookings.book_ref = %s\
-    GROUP BY bookings.book_ref, tf.flight_id, bp.boarding_no ORDER BY tf.flight_id, bp.boarding_no", (id, ))
+    GROUP BY tf.flight_id, bp.boarding_no ORDER BY tf.flight_id, bp.boarding_no", (id, ))
 
     data = curr.fetchall()
     result = []
@@ -136,7 +136,30 @@ async def connect(delay):
 
 @router.get("/v1/top-airlines")
 async def connect(limit):
-   return limit
+    conn = psycopg2.connect(
+        user=settings.DATABASE_USER,
+        password=settings.DATABASE_PASSWORD,
+        host=settings.DATABASE_HOST,
+        port=settings.DATABASE_PORT,
+        database=settings.DATABASE_NAME)
+    curr = conn.cursor()
+    curr.execute("\
+         SELECT count(ticket_no) as count ,json_build_object(\
+    'flight_no', flights.flight_no,\
+    'count', count(ticket_no))\
+        FROM flights\
+ RIGHT JOIN ticket_flights tf on flights.flight_id = tf.flight_id\
+        GROUP BY flights.flight_no\
+ ORDER BY count DESC, flight_no DESC LIMIT %s", (limit,))
+
+    data = curr.fetchall()
+    result = []
+    for json in data:
+        result.append(json[1])
+
+    return {
+        'results': result
+    }
 
 @router.get("/v1/departures")
 async def connect(airport, day):
