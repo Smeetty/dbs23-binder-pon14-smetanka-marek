@@ -115,14 +115,14 @@ async def connect(delay):
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
     curr.execute("\
-           SELECT EXTRACT(MINUTES FROM (actual_departure  - scheduled_departure)) as delay,\
+           SELECT EXTRACT(EPOCH FROM actual_departure - scheduled_departure)/60 as delay,\
             json_build_object(\
                 'flight_id', flight_id,\
                 'flight_no', flight_no,\
-                'delay', EXTRACT(MINUTES FROM (actual_departure  - scheduled_departure))\
+                'delay', ROUND(EXTRACT(EPOCH FROM actual_departure - scheduled_departure)/60, 0)\
             )\
             FROM bookings.flights\
-            WHERE EXTRACT(MINUTES FROM (actual_departure  - scheduled_departure)) >= %s\
+            WHERE EXTRACT(EPOCH FROM actual_departure - scheduled_departure)/60 >= %s\
             ORDER BY delay DESC", (delay,))
 
     data = curr.fetchall()
