@@ -175,16 +175,16 @@ async def connect(airport, day):
                'scheduled_departure', scheduled_departure\
             )\
             FROM bookings.flights\
-            WHERE departure_airport = 'KJA'\
+            WHERE departure_airport = %s\
             AND EXTRACT(ISODOW FROM scheduled_departure) = %s\
             AND flights.status = 'Scheduled'\
             GROUP BY flight_id\
-            ORDER BY scheduled_departure", (airport, day, ))
+            ORDER BY scheduled_departure, flight_id", (airport, day, ))
 
     data = curr.fetchall()
     result = []
     for json in data:
-        result.append(json[1])
+        result.append(json[0])
 
     return {
         'results': result
