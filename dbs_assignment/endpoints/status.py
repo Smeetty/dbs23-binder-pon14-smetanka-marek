@@ -131,6 +131,34 @@ async def connect(delay):
         'results': result
     }
 
+@router.get("/v1/top-airlines")
+async def connect(limit):
+    conn = psycopg2.connect(
+        user=settings.DATABASE_USER,
+        password=settings.DATABASE_PASSWORD,
+        host=settings.DATABASE_HOST,
+        port=settings.DATABASE_PORT,
+        database=settings.DATABASE_NAME)
+    curr = conn.cursor()
+    curr.execute("\
+         SELECT count(DISTINCT t.ticket_no) as count, json_build_object(\
+    'flight_no', flights.flight_no,\
+    'count', count(t.ticket_no))\
+        FROM bookings.flights\
+ LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
+ LEFT JOIN bookings.tickets t on tf.ticket_no = t.ticket_no\
+        GROUP BY flights.flight_no\
+ ORDER BY count DESC, flight_no DESC LIMIT %s", (limit,))
+
+    data = curr.fetchall()
+    result = []
+    for json in data:
+        result.append(json[1])
+
+    return {
+        'results': result
+    }
+
 @router.get("/v1/departures")
 async def connect(airport, day):
     conn = psycopg2.connect(
@@ -141,15 +169,15 @@ async def connect(airport, day):
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
     curr.execute("\
-          SELECT EXTRACT(week FROM scheduled_departure),\
-            json_build_object(\
+          SELECT json_build_object(\
                'flight_id', flight_id,\
                'flight_no', flight_no,\
                'scheduled_departure', scheduled_departure\
             )\
             FROM bookings.flights\
-            WHERE departure_airport = %s\
-            AND EXTRACT(week FROM scheduled_departure) = %s\
+            WHERE departure_airport = 'KJA'\
+            AND EXTRACT(ISODOW FROM scheduled_departure) = %s\
+            AND flights.status = 'Scheduled'\
             GROUP BY flight_id\
             ORDER BY scheduled_departure", (airport, day, ))
 
@@ -200,7 +228,7 @@ async def connect(flight_no):
     curr.execute("SELECT \
                  json_build_object( 'id' ,flights.flight_id, 'aircraft_capacity',\
                  (SELECT COUNT(seats.seat_no) FROM seats WHERE aircraft_code = flights.aircraft_code ),\
-                 'load', COUNT(tf.ticket_no), 'percentage_load', ROUND((cast(COUNT(tf.ticket_no) as decimal) / cast(( SELECT COUNT(seats.seat_no) bookings.FROM seats WHERE aircraft_code = flights.aircraft_code ) as decimal) * 100), 2)) FROM bookings.flights\
+                 'load', COUNT(tf.ticket_no), 'percentage_load', ROUND((cast(COUNT(tf.ticket_no) as decimal) / cast(( SELECT COUNT(seats.seat_no) FROM bookings.seats WHERE aircraft_code = flights.aircraft_code ) as decimal) * 100), 2)) FROM bookings.flights\
                  LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
                  WHERE flights.flight_no = %s GROUP BY flights.flight_id ORDER BY flights.flight_id", (flight_no, ))
 
