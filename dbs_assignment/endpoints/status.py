@@ -226,7 +226,7 @@ async def connect(flight_no):
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
     curr.execute("SELECT \
-                 json_build_object( 'id' ,flights.flight_id, 'aircraft_capacity',\
+                 json_build_object( 'id', flights.flight_id, 'aircraft_capacity',\
                  (SELECT COUNT(seats.seat_no) FROM seats WHERE aircraft_code = flights.aircraft_code ),\
                  'load', COUNT(tf.ticket_no), 'percentage_load', ROUND((cast(COUNT(tf.ticket_no) as decimal) / cast(( SELECT COUNT(seats.seat_no) FROM bookings.seats WHERE aircraft_code = flights.aircraft_code ) as decimal) * 100), 2)) FROM bookings.flights\
                  LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
@@ -235,7 +235,7 @@ async def connect(flight_no):
     data = curr.fetchall()
     result = []
     for json in data:
-        result.append(json)
+        result.append(json[0])
 
     return {
         'results': result
