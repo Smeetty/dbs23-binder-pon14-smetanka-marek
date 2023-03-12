@@ -139,24 +139,10 @@ async def connect(limit):
         host=settings.DATABASE_HOST,
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
-    curr = conn.cursor()
-    curr.execute("\
-         SELECT count(DISTINCT t.ticket_no) as count, json_build_object(\
-    'flight_no', flights.flight_no,\
-    'count', count(t.ticket_no))\
-        FROM bookings.flights\
- LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
- LEFT JOIN bookings.tickets t on tf.ticket_no = t.ticket_no\
-        GROUP BY flights.flight_no\
- ORDER BY count DESC, flight_no DESC LIMIT %s", (limit,))
 
-    data = curr.fetchall()
-    result = []
-    for json in data:
-        result.append(json[1])
 
     return {
-        'results': result
+        'results': "result"
     }
 
 @router.get("/v1/departures")
@@ -168,26 +154,10 @@ async def connect(airport, day):
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
-    curr.execute("\
-          SELECT json_build_object(\
-               'flight_id', flight_id,\
-               'flight_no', flight_no,\
-               'scheduled_departure', scheduled_departure\
-            )\
-            FROM bookings.flights\
-            WHERE departure_airport = %s\
-            AND EXTRACT(ISODOW FROM scheduled_departure) = %s\
-            AND flights.status = 'Scheduled'\
-            GROUP BY flight_id\
-            ORDER BY scheduled_departure, flight_id", (airport, day, ))
 
-    data = curr.fetchall()
-    result = []
-    for json in data:
-        result.append(json[0])
 
     return {
-        'results': result
+        'results': "result"
     }
 
 @router.get("/v1/airports/{airport}/destinations")
@@ -198,22 +168,11 @@ async def connect(airport):
         host=settings.DATABASE_HOST,
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
-    curr = conn.cursor()
-    curr.execute("\
-          SELECT airport_code\
-        FROM bookings.airports_data\
-        LEFT JOIN bookings.flights f on airports_data.airport_code = f.arrival_airport\
-        WHERE f.departure_airport = %s\
-        GROUP BY airport_code\
-        ORDER BY airport_code", (airport, ))
 
-    data = curr.fetchall()
-    result = []
-    for json in data:
-        result.append(json[0])
+
 
     return {
-        'results': result
+        'results': "result"
     }
 
 @router.get("/v1/airlines/{flight_no}/load")
@@ -225,20 +184,10 @@ async def connect(flight_no):
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
-    curr.execute("SELECT \
-                 json_build_object( 'id', flights.flight_id, 'aircraft_capacity',\
-                 (SELECT COUNT(seats.seat_no) FROM seats WHERE aircraft_code = flights.aircraft_code ),\
-                 'load', COUNT(tf.ticket_no), 'percentage_load', ROUND((cast(COUNT(tf.ticket_no) as decimal) / cast(( SELECT COUNT(seats.seat_no) FROM bookings.seats WHERE aircraft_code = flights.aircraft_code ) as decimal) * 100), 2)) FROM bookings.flights\
-                 LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                 WHERE flights.flight_no = %s GROUP BY flights.flight_id ORDER BY flights.flight_id", (flight_no, ))
 
-    data = curr.fetchall()
-    result = []
-    for json in data:
-        result.append(json[0])
 
     return {
-        'results': result
+        'results': "result"
     }
 
 @router.get("/v1/airlines/{flight_no}/load-week")
@@ -250,88 +199,10 @@ async def connect(flight_no):
         port=settings.DATABASE_PORT,
         database=settings.DATABASE_NAME)
     curr = conn.cursor()
-    curr.execute("SELECT\
- json_build_object(\
-        'flight_no', flights.flight_no,\
-        'monday', (SELECT\
-        ROUND((SELECT cast(COUNT(tf.ticket_no) as decimal)\
-                         FROM bookings.flights\
-                         LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 1 GROUP BY flights.aircraft_code)\
-                         / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
-         FROM bookings.flights\
-         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
-         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 1 GROUP BY flights.aircraft_code)\
-        ,\
-        'tuesday', (SELECT\
-        ROUND((SELECT cast(COUNT(tf.ticket_no) as decimal)\
-                         FROM bookings.flights\
-                         LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 2 GROUP BY flights.aircraft_code)\
-                         / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
-         FROM bookings.flights\
-         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
-         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 2 GROUP BY flights.aircraft_code)\
-        ,\
-        'wendesday', (SELECT\
-        ROUND((SELECT cast(COUNT(tf.ticket_no) as decimal)\
-                         FROM bookings.flights\
-                         LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 3 GROUP BY flights.aircraft_code)\
-                         / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
-         FROM bookings.flights\
-         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
-         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 3 GROUP BY flights.aircraft_code)\
-        ,\
-        'thursday', (SELECT\
-        ROUND((SELECT cast(COUNT(tf.ticket_no) as decimal)\
-                         FROM bookings.flights\
-                         LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 4 GROUP BY flights.aircraft_code)\
-                         / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
-         FROM bookings.flights\
-         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
-         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 4 GROUP BY flights.aircraft_code)\
-        ,\
-        'friday', (SELECT\
-        ROUND((SELECT cast(COUNT(tf.ticket_no) as decimal)\
-                         FROM bookings.flights\
-                         LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 5 GROUP BY flights.aircraft_code)\
-                         / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
-         FROM bookings.flights\
-         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
-         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 5 GROUP BY flights.aircraft_code)\
-        ,\
-        'saturday', (SELECT\
-        ROUND((SELECT cast(COUNT(tf.ticket_no) as decimal)\
-                         FROM bookings.flights\
-                         LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 6 GROUP BY flights.aircraft_code)\
-                         / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
-         FROM bookings.flights\
-         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
-         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 6 GROUP BY flights.aircraft_code)\
-        ,\
-        'sunday', (SELECT\
-        ROUND((SELECT cast(COUNT(tf.ticket_no) as decimal)\
-                         FROM bookings.flights\
-                         LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
-                         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 7 GROUP BY flights.aircraft_code)\
-                         / cast(COUNT(s.seat_no) as decimal) * 100, 2)\
-         FROM bookings.flights\
-         LEFT JOIN bookings.seats s on flights.aircraft_code = s.aircraft_code\
-         WHERE flights.flight_no = (%s) AND EXTRACT(ISODOW FROM flights.scheduled_departure) = 7 GROUP BY flights.aircraft_code)\
-) FROM bookings.flights\
- WHERE flights.flight_no = (%s) GROUP BY flight_no", (flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, flight_no, ))
 
-    data = curr.fetchall()
-    result = []
-    for json in data:
-        result.append(json[0])
 
 
     return {
-        'result': result[0]
+        'result': "result[0]"
     }
 
