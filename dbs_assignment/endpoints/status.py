@@ -398,15 +398,16 @@ async def connect(book_ref):
            SELECT\
            (flights.departure_airport,\
            flights.arrival_airport,\
-            flights.flight_no,\
+            flights.flight_id,\
            TO_CHAR((sum(EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)))\
-               OVER (ORDER BY flights.flight_id) || ' second')::interval, 'HH24:MI:SS'),\
+               OVER (ORDER BY flights.scheduled_departure) || ' second')::interval, 'HH24:MI:SS') ,\
            TO_CHAR((EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)) || ' second')::interval, 'HH24:MI:SS')\
            ) as total_f_time FROM bookings.flights\
            LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
            LEFT JOIN bookings.tickets t on tf.ticket_no = t.ticket_no\
-           WHERE t.ticket_no = tickets.ticket_no\
+               WHERE t.ticket_no = tickets.ticket_no\
            AND t.passenger_id = tickets.passenger_id\
+            ORDER BY flights.scheduled_departure\
            )\
     FROM bookings.tickets\
     WHERE tickets.book_ref = %s\
@@ -425,7 +426,8 @@ async def connect(book_ref):
             innerData.append({
                     'departure_airport': format[0].replace('"', '').replace('(', '').replace(')', ''),
                     'arrival_airport': format[1].replace('"', '').replace('(', '').replace(')', ''),
-                    'flight_time': format[4].replace('"', '').replace('(', '').replace(')', ''),
+                'f': format[2].replace('"', '').replace('(', '').replace(')', ''),
+                'flight_time': format[4].replace('"', '').replace('(', '').replace(')', ''),
                     'total_time': format[3].replace('"', '').replace('(', '').replace(')', ''),
                 })
 
@@ -502,7 +504,7 @@ async def connect(aircraft_code):
     data = curr.fetchall()
     result = []
     for json in data:
-        result.append({"total_amount": int(json[0]), "month": json[1], "day": int(int((json[2])))})
+        result.append({"total_amount": int(json[0]), "month": json[1], "day": str(int((json[2])))})
 
     return {
         'results': result
