@@ -466,10 +466,10 @@ async def connect(flight_no, limit):
     data = curr.fetchall()
     result = []
     for json in data:
-        result.append({"seat": json[0], "flight_count": json[1], "flights": json[2]})
+        result.append({"seat": json[0], "flights_count": json[1], "flights": json[2]})
 
     return {
-        'result': result
+        'results': result
     }
 
 
