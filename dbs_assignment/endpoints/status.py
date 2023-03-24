@@ -425,8 +425,8 @@ async def connect(book_ref):
             innerData.append({
                     'departure_airport': format[0].replace('"', '').replace('(', '').replace(')', ''),
                     'arrival_airport': format[1].replace('"', '').replace('(', '').replace(')', ''),
-                    'flight_time': format[2].replace('"', '').replace('(', '').replace(')', ''),
-                    'total_time': format[3].replace('"', '').replace('(', '').replace(')', ''),
+                    'flight_time': format[3].replace('"', '').replace('(', '').replace(')', ''),
+                    'total_time': format[2].replace('"', '').replace('(', '').replace(')', ''),
                 })
 
         result.append({"ticket_no": json[0], "passenger_name": json[1], "flights": innerData})
