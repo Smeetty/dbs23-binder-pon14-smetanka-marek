@@ -496,3 +496,4 @@ SELECT
 Select na každý deň osobytne, pri každom to funguje tak, že získame pre každý deň kde flight_id
 je to čo chceme podľa flight_no zbytočne sa to opakuje ale nevedel som narýchlo prerobit v json_build_object ako to selecnut len raz.
 
+# Zadanie 3

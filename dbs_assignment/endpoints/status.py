@@ -335,3 +335,44 @@ async def connect(flight_no):
         'result': result[0]
     }
 
+# ------------------------------------ ZADANIE 2 ------------------------------------ #
+@router.get("/v3/air-time/{book_ref}")
+async def connect(book_ref):
+    conn = psycopg2.connect(
+        user=settings.DATABASE_USER,
+        password=settings.DATABASE_PASSWORD,
+        host=settings.DATABASE_HOST,
+        port=settings.DATABASE_PORT,
+        database=settings.DATABASE_NAME)
+
+    curr = conn.cursor()
+    curr.execute("SELECT tickets.ticket_no, tickets.passenger_name,\
+       array(\
+           SELECT\
+           (flights.departure_airport,\
+           flights.arrival_airport,\
+           flights.flight_no,\
+           TO_CHAR((sum(EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)))\
+               OVER (ORDER BY flights.flight_id) || ' second')::interval, 'HH24:MI:SS'),\
+           TO_CHAR((EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)) || ' second')::interval, 'HH24:MI:SS')\
+           ) FROM flights\
+           LEFT JOIN ticket_flights tf on flights.flight_id = tf.flight_id\
+           LEFT JOIN tickets t on tf.ticket_no = t.ticket_no\
+           WHERE t.ticket_no = tickets.ticket_no\
+           AND t.passenger_id = tickets.passenger_id\
+           ORDER BY flights.actual_departure\
+           )\
+    FROM tickets\
+    WHERE tickets.book_ref = %s\
+    GROUP BY tickets.ticket_no\
+    ORDER BY tickets.ticket_no", (book_ref,))
+
+    data = curr.fetchall()
+    result = {"id": data[0][0], "book_date": data[0][1], "boarding_passes": []}
+
+    for json in data:
+        result['boarding_passes'].append(json[2])
+
+    return {
+        'result': result
+    }
