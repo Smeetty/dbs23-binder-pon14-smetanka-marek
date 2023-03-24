@@ -398,7 +398,6 @@ async def connect(book_ref):
            SELECT\
            (flights.departure_airport,\
            flights.arrival_airport,\
-            flights.flight_id,\
            TO_CHAR((sum(EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)))\
                OVER (ORDER BY flights.scheduled_departure) || ' second')::interval, 'HH24:MI:SS') ,\
            TO_CHAR((EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)) || ' second')::interval, 'HH24:MI:SS')\
@@ -426,8 +425,7 @@ async def connect(book_ref):
             innerData.append({
                     'departure_airport': format[0].replace('"', '').replace('(', '').replace(')', ''),
                     'arrival_airport': format[1].replace('"', '').replace('(', '').replace(')', ''),
-                'f': format[2].replace('"', '').replace('(', '').replace(')', ''),
-                'flight_time': format[4].replace('"', '').replace('(', '').replace(')', ''),
+                    'flight_time': format[2].replace('"', '').replace('(', '').replace(')', ''),
                     'total_time': format[3].replace('"', '').replace('(', '').replace(')', ''),
                 })
 
