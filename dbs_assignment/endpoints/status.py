@@ -502,7 +502,7 @@ async def connect(aircraft_code):
     data = curr.fetchall()
     result = []
     for json in data:
-        result.append({"total_amount": int(json[0]), "month": json[1], "day": int(str(json[2]))})
+        result.append({"total_amount": int(json[0]), "month": json[1], "day": int(int((json[2])))})
 
     return {
         'results': result
