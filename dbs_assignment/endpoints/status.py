@@ -360,7 +360,7 @@ async def connect(aircraft_code, seat_choice):
        count(*) as count\
     FROM (SELECT bp.seat_no                                                    as seat_no,\
              dense_rank() over (PARTITION BY bp.flight_id order by b.book_date) as rank\
-      from boarding_passes bp\
+      from bookings.boarding_passes bp\
             JOIN bookings.tickets t ON bp.ticket_no = t.ticket_no\
             JOIN bookings.bookings b ON t.book_ref = b.book_ref\
             WHERE bp.flight_id IN (\
@@ -490,8 +490,8 @@ async def connect(aircraft_code):
              DATE_PART('day', f.scheduled_departure)                                                              as day,\
              RANK() OVER (PARTITION BY CONCAT(DATE_PART('year', scheduled_departure), '-',\
                                               DATE_PART('month', scheduled_departure)) order by sum(amount) desc) as rank\
-      FROM ticket_flights\
-               LEFT JOIN flights f on ticket_flights.flight_id = f.flight_id\
+      FROM bookings.ticket_flights\
+               LEFT JOIN bookings.flights f on ticket_flights.flight_id = f.flight_id\
       WHERE f.aircraft_code = %s\
         AND actual_departure is not null\
       GROUP BY DATE_PART('day', f.scheduled_departure), DATE_PART('month', f.scheduled_departure),\
