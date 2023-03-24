@@ -1,3 +1,214 @@
+# Zadanie 3
+
+## Endpoint - 1 (2B)
+Požiadavka: GET /v3/aircrafts/:aircraft_code/seats/:seat_choice <br>
+Popis: <br>
+
+Pomocou window funckie dense rank PARTITION BY bp.flight_id order by b.book_date získame všetky boarding_passes
+, ktoré po LEFT JOINe majú flight id, také, ktoré obsahuje aircraft_code zadané ako pamareter. Táto funkcia nám
+zabezpečí, že získame ohodnotenie podľa book date, s tým že rôzne hodnoty budu pokračovať n+1 kde skončili.
+takže čísla budú stale 1,2,3 nie 1,5 atď. podľa toho vyberieme tie, ktoré potrebujeme najčastejšie (WHERE rank 1).
+
+Python:
+
+```shell
+ curr.execute("SELECT seat_no,\
+       count(*) as count\
+    FROM (SELECT bp.seat_no                                                    as seat_no,\
+             dense_rank() over (PARTITION BY bp.flight_id order by b.book_date) as rank\
+      from bookings.boarding_passes bp\
+            JOIN bookings.tickets t ON bp.ticket_no = t.ticket_no\
+            JOIN bookings.bookings b ON t.book_ref = b.book_ref\
+            WHERE bp.flight_id IN (\
+                SELECT flight_id\
+                FROM bookings.flights\
+                WHERE aircraft_code LIKE %s\
+            )\
+      ) as what\
+    WHERE RANK = %s\
+    group by seat_no\
+    order by count desc\
+    limit 1", (aircraft_code, seat_choice))
+```
+PostgreSql:
+
+```shell
+SELECT seat_no,
+       count(*) as count
+FROM (SELECT bp.seat_no                                                    as seat_no,
+             dense_rank() over (PARTITION BY bp.flight_id order by b.book_date) as rank
+      from boarding_passes bp
+            JOIN bookings.tickets t ON bp.ticket_no = t.ticket_no
+            JOIN bookings.bookings b ON t.book_ref = b.book_ref
+            WHERE bp.flight_id IN (
+                SELECT flight_id
+                FROM bookings.flights
+                WHERE aircraft_code LIKE 'SU9'
+            )
+      ) as suck
+where rank = 2
+group by seat_no
+order by count desc
+limit 1
+```
+
+## Endpoint - 2 (2B)
+Požiadavka: GET /v3/air-time/:book_ref <br>
+Popis: <br>
+Získame všetky lety, ktoré majú ticker.book_ref poďla parametrov. V subselecte získame rozdiel dátumov a pomocou
+window funkcie sum over order podľa scheduled_departure získame súčet tohto rozdielu podľa scheduled_departure.
+
+Python:
+
+```shell
+  curr.execute("SELECT tickets.ticket_no,\
+                 tickets.passenger_name,\
+       array(\
+           SELECT\
+           (flights.departure_airport,\
+           flights.arrival_airport,\
+           TO_CHAR((sum(EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)))\
+               OVER (ORDER BY flights.scheduled_departure) || ' second')::interval, 'HH24:MI:SS') ,\
+           TO_CHAR((EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)) || ' second')::interval, 'HH24:MI:SS')\
+           ) as total_f_time FROM bookings.flights\
+           LEFT JOIN bookings.ticket_flights tf on flights.flight_id = tf.flight_id\
+           LEFT JOIN bookings.tickets t on tf.ticket_no = t.ticket_no\
+               WHERE t.ticket_no = tickets.ticket_no\
+           AND t.passenger_id = tickets.passenger_id\
+            ORDER BY flights.scheduled_departure\
+           )\
+    FROM bookings.tickets\
+    WHERE tickets.book_ref = %s\
+    GROUP BY tickets.ticket_no\
+    ORDER BY tickets.ticket_no", (book_ref,))
+```
+
+PostgreSql:
+
+```shell
+SELECT tickets.ticket_no, tickets.passenger_name,
+       array(
+           SELECT
+           (flights.departure_airport,
+           flights.arrival_airport,
+           flights.flight_no,
+           TO_CHAR((sum(EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)))
+               OVER (ORDER BY flights.flight_id) || ' second')::interval, 'HH24:MI:SS'),
+           TO_CHAR((EXTRACT(EPOCH FROM (flights.actual_arrival - flights.actual_departure)) || ' second')::interval, 'HH24:MI:SS')
+           ) as  total_f_time FROM flights
+           LEFT JOIN ticket_flights tf on flights.flight_id = tf.flight_id
+           LEFT JOIN tickets t on tf.ticket_no = t.ticket_no
+           WHERE t.ticket_no = tickets.ticket_no
+           AND t.passenger_id = tickets.passenger_id
+           ORDER BY total_f_time DESC
+           )
+FROM tickets
+WHERE tickets.book_ref = '8D344B'
+GROUP BY tickets.ticket_no
+ORDER BY tickets.ticket_no
+```
+
+
+## Endpoint - 3 (2B)
+Požiadavka: GET /v3/airlines/:flight_no/top_seats?limit=:limit <br>
+Popis: <br>
+Získame flight_ids, kde flight_no sa rovná parametru. použijeme window funkciu dense rank, pomocu ktorej získame
+počet flight_count. To limitujeme pomocou limitu, ktorý získame ako parameter.
+
+Python:
+
+```shell
+    curr.execute("SELECT seat_no as seat, flight_count, ARRAY_AGG(flight_id ORDER BY flight_id) as flights\
+    FROM (SELECT flight_id,\
+             seat_no,\
+             COUNT(sub1.rank) OVER (PARTITION BY rank) as flight_count\
+      FROM (SELECT boarding_passes.seat_no,\
+                   f.flight_id,\
+                   f.flight_id - DENSE_RANK() OVER (ORDER BY boarding_passes.seat_no, f.flight_id) as rank\
+            FROM bookings.flights f\
+                     JOIN bookings.boarding_passes ON f.flight_id = boarding_passes.flight_id\
+            WHERE f.flight_id IN (SELECT flight_id\
+                                  FROM bookings.flights\
+                                  WHERE flight_no = %s)) as sub1\
+      ORDER BY sub1.seat_no\
+      ) as sub\
+    GROUP BY seat, flight_count\
+    ORDER BY flight_count DESC LIMIT %s", (flight_no, limit))
+```
+
+PostgreSql:
+
+```shell
+SELECT seat_no as seat, flight_count, ARRAY_AGG(flight_id ORDER BY flight_id) as flights
+FROM (SELECT flight_id,
+             seat_no,
+             COUNT(sub1.rank) OVER (PARTITION BY rank) as flight_count
+      FROM (SELECT boarding_passes.seat_no,
+                   f.flight_id,
+                   f.flight_id - DENSE_RANK() OVER (ORDER BY boarding_passes.seat_no, f.flight_id) as rank
+            FROM bookings.flights f
+                     JOIN bookings.boarding_passes ON f.flight_id = boarding_passes.flight_id
+            WHERE f.flight_id IN (SELECT flight_id
+                                  FROM bookings.flights
+                                  WHERE flight_no = 'PG0019')) as sub1
+      ORDER BY sub1.seat_no
+      ) as sub
+GROUP BY seat, flight_count
+ORDER BY flight_count DESC
+LIMIT 1
+```
+
+## Endpoint - 4 (2B)
+Požiadavka: GET /v3/aircrafts/:aircraft_code/top-incomes <br>
+Popis: <br>
+Získame pomocou funkcie DATE_PART časti z timestampu napríklad mesiac, rok a deň. Pomocou funkcie concat
+spojíme dva stringy napríklad dátum. Spojíme iba tie dátumy, ktoré majú rovnaké yyyy-mm dátum a zoradíme podľa
+sum(amount (tú su zaradené všekty tickety daného letu)). Takto ohodnotíme skupiny (yyyy-mm) a ohodnotíme podĺa sum(amount (tú su zaradené všekty tickety daného letu)).
+
+
+Python:
+
+```shell
+    curr.execute("SELECT total_amount, month, day, rank\
+    FROM (SELECT sum(amount)                                                                                          as total_amount,\
+             CONCAT(DATE_PART('year', f.scheduled_departure), '-',\
+                    DATE_PART('month', f.scheduled_departure))                                                    as month,\
+             DATE_PART('day', f.scheduled_departure)                                                              as day,\
+             RANK() OVER (PARTITION BY CONCAT(DATE_PART('year', scheduled_departure), '-',\
+                                              DATE_PART('month', scheduled_departure)) order by sum(amount) desc) as rank\
+      FROM bookings.ticket_flights\
+               LEFT JOIN bookings.flights f on ticket_flights.flight_id = f.flight_id\
+      WHERE f.aircraft_code = %s\
+        AND actual_departure is not null\
+      GROUP BY DATE_PART('day', f.scheduled_departure), DATE_PART('month', f.scheduled_departure),\
+               DATE_PART('year', f.scheduled_departure),\
+               DATE_TRUNC('month', f.scheduled_departure)) as was\
+    WHERE rank = 1\
+    ORDER BY total_amount DESC, month", (aircraft_code,))
+```
+
+PostgreSql:
+
+```shell
+SELECT total_amount, month, day, rank
+    FROM
+(SELECT sum(amount) as total_amount, CONCAT(DATE_PART('year', f.scheduled_departure), '-', DATE_PART('month', f.scheduled_departure)) as month,
+       DATE_PART('day', f.scheduled_departure) as day,
+       RANK() OVER(PARTITION BY CONCAT(DATE_PART('year', scheduled_departure), '-', DATE_PART('month', scheduled_departure)) order by sum(amount) desc) as rank
+       FROM ticket_flights
+LEFT JOIN flights f on ticket_flights.flight_id = f.flight_id
+WHERE f.aircraft_code = '763'
+AND actual_departure is not null
+GROUP BY DATE_PART('day', f.scheduled_departure), DATE_PART('month', f.scheduled_departure), DATE_PART('year', f.scheduled_departure),
+         DATE_TRUNC('month', f.scheduled_departure)
+) as was
+    where rank = 1
+ORDER BY total_amount DESC, month
+```
+
+
+
+
 # Zadanie 2 Dokumentácia k endpointom
 
 ## Endpoint - zoznam spolucestujúcich (1b)
@@ -495,5 +706,3 @@ SELECT
 :D Chcelo by to refaktor no ale čo už.
 Select na každý deň osobytne, pri každom to funguje tak, že získame pre každý deň kde flight_id
 je to čo chceme podľa flight_no zbytočne sa to opakuje ale nevedel som narýchlo prerobit v json_build_object ako to selecnut len raz.
-
-# Zadanie 3

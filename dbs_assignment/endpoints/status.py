@@ -345,7 +345,7 @@ async def connect(flight_no):
     }
 
 
-# ------------------------------------ ZADANIE 2 ------------------------------------ #
+# ------------------------------------ ZADANIE 3 ------------------------------------ #
 @router.get("/v3/aircrafts/{aircraft_code}/seats/{seat_choice}")
 async def connect(aircraft_code, seat_choice):
     conn = psycopg2.connect(
@@ -445,7 +445,7 @@ async def connect(flight_no, limit):
         database=settings.DATABASE_NAME)
 
     curr = conn.cursor()
-    curr.execute("SELECT seat_no as seat, flight_count, (ARRAY_AGG(flight_id ORDER BY flight_id)) as flights\
+    curr.execute("SELECT seat_no as seat, flight_count, ARRAY_AGG(flight_id ORDER BY flight_id) as flights\
     FROM (SELECT flight_id,\
              seat_no,\
              COUNT(sub1.rank) OVER (PARTITION BY rank) as flight_count\
@@ -456,7 +456,7 @@ async def connect(flight_no, limit):
                      JOIN bookings.boarding_passes ON f.flight_id = boarding_passes.flight_id\
             WHERE f.flight_id IN (SELECT flight_id\
                                   FROM bookings.flights\
-                                  WHERE flight_no LIKE %s)) as sub1\
+                                  WHERE flight_no = %s)) as sub1\
       ORDER BY sub1.seat_no\
       ) as sub\
     GROUP BY seat, flight_count\
