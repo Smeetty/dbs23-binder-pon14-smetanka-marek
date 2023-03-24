@@ -446,7 +446,7 @@ async def connect(flight_no, limit):
         database=settings.DATABASE_NAME)
 
     curr = conn.cursor()
-    curr.execute("SELECT seat_no as seat, flight_count, (ARRAY_AGG(flight_id ORDER BY flight_id))[0:5] as flights\
+    curr.execute("SELECT seat_no as seat, flight_count, (ARRAY_AGG(flight_id ORDER BY flight_id)) as flights\
     FROM (SELECT flight_id,\
              seat_no,\
              COUNT(sub1.rank) OVER (PARTITION BY rank) as flight_count\
@@ -466,7 +466,7 @@ async def connect(flight_no, limit):
     data = curr.fetchall()
     result = []
     for json in data:
-        result.append({"seat": json[0], "flight_count": json[1], "fligths": json[2]})
+        result.append({"seat": json[0], "flight_count": json[1], "flights": json[2]})
 
     return {
         'result': result
